@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistema Gestión - Login y Control</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f7f9fc;
+    }
+    h1, h2 {
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    input, select, button {
+      margin: 5px 0;
+      padding: 7px;
+      width: 100%;
+      max-width: 300px;
+      box-sizing: border-box;
+    }
+    button {
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .section {
+      margin-bottom: 40px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 6px #ccc;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    #appContainer {
+      display: none;
+    }
+    #loginContainer {
+      max-width: 400px;
+      margin: 100px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #aaa;
+      text-align: center;
+    }
+    #logoutBtn {
+      margin-top: 10px;
+      background-color: #dc3545;
+      width: 120px;
+    }
+    #logoutBtn:hover {
+      background-color: #b02a37;
+    }
+    .icon {
+      width: 20px;
+      height: 20px;
+      vertical-align: middle;
+    }
+    .section img.section-img {
+      height: 40px;
+      margin-left: 10px;
+    }
+    .action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0 5px;
+    }
+    .action-btn img {
+      width: 20px;
+      height: 20px;
+    }
+    /* Ajustes responsive */
+    @media (max-width: 600px) {
+      button, input, select {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login -->
+  <div id="loginContainer">
+    <h1><img src="https://cdn-icons-png.flaticon.com/512/3064/3064155.png" alt="Login" class="icon" /> Login</h1>
+    <input type="text" id="inputUsuario" placeholder="Usuario" autocomplete="off" />
+    <input type="password" id="inputPassword" placeholder="Contraseña" autocomplete="off" />
+    <button onclick="login()">
+      <img src="https://cdn-icons-png.flaticon.com/512/1828/1828419.png" alt="Ingresar" class="icon" /> Ingresar
+    </button>
+    <p id="errorLogin" style="color: red; display: none;">Usuario o contraseña incorrectos</p>
+  </div>
+
+  <!-- Aplicación -->
+  <div id="appContainer">
+    <button id="logoutBtn" onclick="logout()">
+      <img src="https://cdn-icons-png.flaticon.com/512/1828/1828479.png" alt="Salir" class="icon" /> Cerrar sesión
+    </button>
+    <h1>
+      Sistema de Gestión - Pacientes y Medicamentos
+      <img src="https://cdn-icons-png.flaticon.com/512/2965/2965567.png" alt="Sistema" class="section-img" />
+    </h1>
+
+    <!-- Sección Pacientes -->
+    <div class="section" id="pacientesSection">
+      <h2>
+        Pacientes
+        <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="Pacientes" class="section-img" />
+      </h2>
+      <input type="text" id="buscarPaciente" placeholder="Buscar paciente por nombre o documento" onkeyup="buscarPaciente()" />
+      <table id="tablaPacientes">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Edad</th>
+            <th>Género</th>
+            <th>Documento</th>
+            <th>Teléfono</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <h3>Agregar Nuevo Paciente</h3>
+      <input type="text" id="nuevoNombre" placeholder="Nombre completo" />
+      <input type="number" id="nuevoEdad" placeholder="Edad" min="0" />
+      <select id="nuevoGenero">
+        <option value="">Seleccione género</option>
+        <option value="Masculino">Masculino</option>
+        <option value="Femenino">Femenino</option>
+        <option value="Otro">Otro</option>
+      </select>
+      <input type="text" id="nuevoDocumento" placeholder="Número de documento" />
+      <input type="text" id="nuevoTelefono" placeholder="Teléfono" />
+      <button onclick="agregarPaciente()">
+        <img src="https://cdn-icons-png.flaticon.com/512/1828/1828817.png" alt="Agregar" class="icon" /> Agregar Paciente
+      </button>
+      <button onclick="exportarPacientesExcel()">
+        <img src="https://cdn-icons-png.flaticon.com/512/136/136541.png" alt="Exportar" class="icon" /> Exportar Pacientes a Excel
+      </button>
+    </div>
+
+    <!-- Sección Medicamentos -->
+    <div class="section" id="medicamentosSection">
+      <h2>
+        Inventario de Medicamentos
+        <img src="https://cdn-icons-png.flaticon.com/512/2917/2917996.png" alt="Medicamentos" class="section-img" />
+      </h2>
+      <table id="tablaMedicamentos">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Presentación</th>
+            <th>Stock</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <h3>Agregar Nuevo Medicamento</h3>
+      <input type="text" id="nuevoMedicamentoNombre" placeholder="Nombre del medicamento" />
+      <input type="text" id="nuevoMedicamentoPresentacion" placeholder="Presentación" />
+      <input type="number" id="nuevoMedicamentoStock" placeholder="Stock" min="0" />
+      <button onclick="agregarMedicamento()">
+        <img src="https://cdn-icons-png.flaticon.com/512/1828/1828817.png" alt="Agregar" class="icon" /> Agregar Medicamento
+      </button>
+      <button onclick="exportarMedicamentosExcel()">
+        <img src="https://cdn-icons-png.flaticon.com/512/136/136541.png" alt="Exportar" class="icon" /> Exportar Medicamentos a Excel
+      </button>
+    </div>
+
+    <!-- Sección Citas Médicas -->
+    <div class="section" id="citasSection">
+      <h2>
+        Registro de Citas Médicas
+        <img src="https://cdn-icons-png.flaticon.com/512/2965/2965548.png" alt="Citas" class="section-img" />
+      </h2>
+      <input type="text" id="nombrePacienteCita" placeholder="Nombre paciente" />
+      <input type="text" id="documentoPacienteCita" placeholder="Documento paciente" />
+      <select id="medico">
+        <option value="">Seleccione médico</option>
+        <option value="Dr. Juan Pérez">Dr. Juan Pérez</option>
+        <option value="Dra. Ana Gómez">Dra. Ana Gómez</option>
+        <option value="Dr. Carlos Ruiz">Dr. Carlos Ruiz</option>
+      </select>
+      <input type="date" id="fechaCita" />
+      <button onclick="registrarCita()">
+        <img src="https://cdn-icons-png.flaticon.com/512/1828/1828817.png" alt="Registrar" class="icon" /> Registrar Cita
+      </button>
+
+      <h3>Citas Registradas</h3>
+      <ul id="listaCitas"></ul>
+    </div>
+  </div>
+
+  <script>
+    // Credenciales fijas para login
+    const USUARIO_ADMIN = "admin";
+    const PASSWORD_ADMIN = "1234";
+
+    // Elementos DOM
+    const loginContainer = document.getElementById("loginContainer");
+    const appContainer = document.getElementById("appContainer");
+    const errorLogin = document.getElementById("errorLogin");
+
+    // Variables globales (arrays) con localStorage
+    let pacientes = JSON.parse(localStorage.getItem("pacientes")) || [];
+    let medicamentos = JSON.parse(localStorage.getItem("medicamentos")) || [];
+    let citas = JSON.parse(localStorage.getItem("citas")) || [];
+
+    // Validar si ya hay sesión activa (ejemplo simple)
+    window.onload = () => {
+      const sesionActiva = sessionStorage.getItem("loggedIn");
+      if (sesionActiva === "true") {
+        mostrarApp();
+      } else {
+        mostrarLogin();
+      }
+    };
+
+    // Mostrar login / ocultar app
+    function mostrarLogin() {
+      loginContainer.style.display = "block";
+      appContainer.style.display = "none";
+    }
+
+    // Mostrar app / ocultar login
+    function mostrarApp() {
+      loginContainer.style.display = "none";
+      appContainer.style.display = "block";
+      mostrarPacientes();
+      mostrarMedicamentos();
+      mostrarCitas();
+    }
+
+    // Función login
+    function login() {
+      const usuario = document.getElementById("inputUsuario").value.trim();
+      const password = document.getElementById("inputPassword").value.trim();
+
+      if (usuario === USUARIO_ADMIN && password === PASSWORD_ADMIN) {
+        errorLogin.style.display = "none";
+        sessionStorage.setItem("loggedIn", "true");
+        mostrarApp();
+      } else {
+        errorLogin.style.display = "block";
+      }
+    }
+
+    // Función logout
+    function logout() {
+      sessionStorage.removeItem("loggedIn");
+      mostrarLogin();
+    }
+
+    // === Funciones para pacientes ===
+    function mostrarPacientes(filtrados = null) {
+      const tbody = document.querySelector("#tablaPacientes tbody");
+      tbody.innerHTML = "";
+      const lista = filtrados || pacientes;
+      if (lista.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='7'>No hay pacientes registrados</td></tr>";
+        return;
+      }
+      lista.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${p.id}</td>
+          <td>${p.nombre}</td>
+          <td>${p.edad}</td>
+          <td>${p.genero}</td>
+          <td>${p.documento}</td>
+          <td>${p.telefono}</td>
+          <td>
+            <button class="action-btn" onclick="editarPaciente(${p.id})" title="Editar">
+              <img src="https://cdn-icons-png.flaticon.com/512/1159/1159633.png" alt="Editar" />
+            </button>
+            <button class="action-btn" onclick="eliminarPaciente(${p.id})" title="Eliminar">
+              <img src="https://cdn-icons-png.flaticon.com/512/1214/1214428.png" alt="Eliminar" />
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function agregarPaciente() {
+      const nombre = document.getElementById("nuevoNombre").value.trim();
+      const edad = parseInt(document.getElementById("nuevoEdad").value.trim());
+      const genero = document.getElementById("nuevoGenero").value;
+      const documento = document.getElementById("nuevoDocumento").value.trim();
+      const telefono = document.getElementById("nuevoTelefono").value.trim();
+
+      if (!nombre || isNaN(edad) || !genero || !documento || !telefono) {
+        alert("Por favor, complete todos los campos correctamente.");
+        return;
+      }
+
+      const nuevoPaciente = {
+        id: pacientes.length > 0 ? pacientes[pacientes.length - 1].id + 1 : 1,
+        nombre,
+        edad,
+        genero,
+        documento,
+        telefono,
+      };
+
+      pacientes.push(nuevoPaciente);
+      localStorage.setItem("pacientes", JSON.stringify(pacientes));
+      mostrarPacientes();
+
+      // Limpiar campos
+      document.getElementById("nuevoNombre").value = "";
+      document.getElementById("nuevoEdad").value = "";
+      document.getElementById("nuevoGenero").value = "";
+      document.getElementById("nuevoDocumento").value = "";
+      document.getElementById("nuevoTelefono").value = "";
+    }
+
+    function eliminarPaciente(id) {
+      if (!confirm("¿Está seguro que desea eliminar este paciente?")) return;
+      pacientes = pacientes.filter(p => p.id !== id);
+      localStorage.setItem("pacientes", JSON.stringify(pacientes));
+      mostrarPacientes();
+    }
+
+    function buscarPaciente() {
+      const filtro = document.getElementById("buscarPaciente").value.toLowerCase();
+      const filtrados = pacientes.filter(p =>
+        p.nombre.toLowerCase().includes(filtro) ||
+        p.documento.toLowerCase().includes(filtro)
+      );
+      mostrarPacientes(filtrados);
+    }
+
+    // === Funciones para medicamentos ===
+    function mostrarMedicamentos() {
+      const tbody = document.querySelector("#tablaMedicamentos tbody");
+      tbody.innerHTML = "";
+      if (medicamentos.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='5'>No hay medicamentos registrados</td></tr>";
+        return;
+      }
+      medicamentos.forEach(m => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${m.id}</td>
+          <td>${m.nombre}</td>
+          <td>${m.presentacion}</td>
+          <td>${m.stock}</td>
+          <td>
+            <button class="action-btn" onclick="editarMedicamento(${m.id})" title="Editar">
+              <img src="https://cdn-icons-png.flaticon.com/512/1159/1159633.png" alt="Editar" />
+            </button>
+            <button class="action-btn" onclick="eliminarMedicamento
+
+            <button class="action-btn" onclick="eliminarMedicamento(${m.id})" title="Eliminar">
+              <img src="https://cdn-icons-png.flaticon.com/512/1214/1214428.png" alt="Eliminar" />
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function agregarMedicamento() {
+      const nombre = document.getElementById("nuevoMedicamentoNombre").value.trim();
+      const presentacion = document.getElementById("nuevoMedicamentoPresentacion").value.trim();
+      const stock = parseInt(document.getElementById("nuevoMedicamentoStock").value.trim());
+
+      if (!nombre || !presentacion || isNaN(stock)) {
+        alert("Por favor, complete todos los campos correctamente.");
+        return;
+      }
+
+      const nuevoMedicamento = {
+        id: medicamentos.length > 0 ? medicamentos[medicamentos.length - 1].id + 1 : 1,
+        nombre,
+        presentacion,
+        stock
+      };
+
+      medicamentos.push(nuevoMedicamento);
+      localStorage.setItem("medicamentos", JSON.stringify(medicamentos));
+      mostrarMedicamentos();
+
+      document.getElementById("nuevoMedicamentoNombre").value = "";
+      document.getElementById("nuevoMedicamentoPresentacion").value = "";
+      document.getElementById("nuevoMedicamentoStock").value = "";
+    }
+
+    function eliminarMedicamento(id) {
+      if (!confirm("¿Está seguro que desea eliminar este medicamento?")) return;
+      medicamentos = medicamentos.filter(m => m.id !== id);
+      localStorage.setItem("medicamentos", JSON.stringify(medicamentos));
+      mostrarMedicamentos();
+    }
+
+    // === Funciones para citas médicas ===
+    function registrarCita() {
+      const nombrePaciente = document.getElementById("nombrePacienteCita").value.trim();
+      const documentoPaciente = document.getElementById("documentoPacienteCita").value.trim();
+      const medico = document.getElementById("medico").value;
+      const fecha = document.getElementById("fechaCita").value;
+
+      if (!nombrePaciente || !documentoPaciente || !medico || !fecha) {
+        alert("Por favor, complete todos los campos para registrar la cita.");
+        return;
+      }
+
+      const nuevaCita = {
+        id: citas.length > 0 ? citas[citas.length - 1].id + 1 : 1,
+        nombrePaciente,
+        documentoPaciente,
+        medico,
+        fecha
+      };
+
+      citas.push(nuevaCita);
+      localStorage.setItem("citas", JSON.stringify(citas));
+      mostrarCitas();
+
+      document.getElementById("nombrePacienteCita").value = "";
+      document.getElementById("documentoPacienteCita").value = "";
+      document.getElementById("medico").value = "";
+      document.getElementById("fechaCita").value = "";
+    }
+
+    function mostrarCitas() {
+      const lista = document.getElementById("listaCitas");
+      lista.innerHTML = "";
+      if (citas.length === 0) {
+        lista.innerHTML = "<li>No hay citas registradas</li>";
+        return;
+      }
+      citas.forEach(c => {
+        const li = document.createElement("li");
+        li.textContent = `Paciente: ${c.nombrePaciente} (Doc: ${c.documentoPaciente}) - Médico: ${c.medico} - Fecha: ${c.fecha}`;
+        lista.appendChild(li);
+      });
+    }
+
+    // === Exportar a Excel ===
+    function exportarPacientesExcel() {
+      if (pacientes.length === 0) {
+        alert("No hay pacientes para exportar.");
+        return;
+      }
+      const ws = XLSX.utils.json_to_sheet(pacientes);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Pacientes");
+      XLSX.writeFile(wb, "pacientes.xlsx");
+    }
+
+    function exportarMedicamentosExcel() {
+      if (medicamentos.length === 0) {
+        alert("No hay medicamentos para exportar.");
+        return;
+      }
+      const ws = XLSX.utils.json_to_sheet(medicamentos);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Medicamentos");
+      XLSX.writeFile(wb, "medicamentos.xlsx");
+    }
+
+    // Aquí podrías agregar funciones editarPaciente y editarMedicamento si quieres edición
+    // Por ahora solo está eliminación y listado.
+
+  </script>
+</body>
+</html>
